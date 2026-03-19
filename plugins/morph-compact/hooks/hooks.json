@@ -1,7 +1,7 @@
 {
   "description": "Starts and stops the Morph compaction proxy alongside Claude Code",
   "hooks": {
-    "SessionStart": [
+    "Setup": [
       {
         "hooks": [
           {
