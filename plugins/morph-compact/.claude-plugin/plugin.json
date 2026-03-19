@@ -8,6 +8,5 @@
   },
   "repository": "https://github.com/morphllm/morph-claude-code-plugin",
   "license": "MIT",
-  "keywords": ["compaction", "context", "morph", "proxy"],
-  "hooks": "./hooks/hooks.json"
+  "keywords": ["compaction", "context", "morph", "proxy"]
 }
