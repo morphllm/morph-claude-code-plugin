@@ -1,0 +1,8 @@
+{
+  "name": "morph-compact",
+  "description": "Intercepts Claude Code's context compaction and replaces it with Morph's compaction service",
+  "author": {
+    "name": "Morph",
+    "url": "https://morphllm.com"
+  }
+}

@@ -1,4 +1,5 @@
 {
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "morph",
   "description": "Morph plugins for Claude Code",
   "owner": {
@@ -10,7 +11,7 @@
       "name": "morph-compact",
       "description": "Intercepts Claude Code's context compaction and replaces it with Morph's compaction service",
       "version": "0.1.0",
-      "source": "./plugins/morph-compact",
+      "source": "./",
       "author": {
         "name": "Morph",
         "url": "https://morphllm.com"
