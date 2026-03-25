@@ -20,6 +20,7 @@ interface SessionStartInput {
 interface StateData {
   summary: string;
   warn: boolean;
+  error?: string;
 }
 
 const STATE_DIR = join(tmpdir(), "compact-hook");
@@ -47,23 +48,41 @@ export async function hookPreCompact(): Promise<void> {
     throw new Error(`transcript not found: ${input.transcript_path}`);
   }
 
-  const messages = await parseTranscript(input.transcript_path);
-  const summary = await compact(messages);
-
-  const state: StateData = {
-    summary,
-    warn: input.trigger === "manual" && !input.custom_instructions,
-  };
-
   await mkdir(STATE_DIR, { recursive: true });
-  await Bun.write(stateFile(input.session_id), JSON.stringify(state));
+
+  try {
+    const messages = await parseTranscript(input.transcript_path);
+    const summary = await compact(messages);
+
+    const state: StateData = {
+      summary,
+      warn: input.trigger === "manual" && !input.custom_instructions,
+    };
+
+    await Bun.write(stateFile(input.session_id), JSON.stringify(state));
+  } catch (e) {
+    const msg = (e as Error).message;
+    const state: StateData = {
+      summary: "",
+      warn: false,
+      error: msg,
+    };
+    await Bun.write(stateFile(input.session_id), JSON.stringify(state));
+
+    process.stderr.write(
+      `Morph compaction failed: ${msg}\n` +
+        `Context from the previous conversation was NOT preserved.\n`,
+    );
+    process.exit(1);
+  }
 }
 
 export async function hookSessionStart(): Promise<void> {
   const input = await readStdin<SessionStartInput>();
   if (!input.session_id) throw new Error("no session_id in hook input");
 
-  // additionalContext is only injected for startup/resume, not compact
+  // additionalContext is ignored for compact; errors are surfaced
+  // directly from PreCompact via systemMessage instead
   if (input.source === "compact") return;
 
   const sf = stateFile(input.session_id);
@@ -71,6 +90,12 @@ export async function hookSessionStart(): Promise<void> {
   if (!(await file.exists())) return;
 
   const state = (await file.json()) as StateData;
+
+  if (state.error) {
+    await unlink(sf).catch(() => {});
+    return;
+  }
+
   let data = state.summary;
 
   if (state.warn) {
