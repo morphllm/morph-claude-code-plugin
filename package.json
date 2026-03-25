@@ -1,0 +1,11 @@
+{
+  "name": "morph-claude-code-plugin",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "dependencies": {
+    "@morphllm/morphsdk": "^0.2.157"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "hooks": {
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun install --silent --cwd ${CLAUDE_PLUGIN_ROOT} && bun ${CLAUDE_PLUGIN_ROOT}/src/hooks/pre-compact.ts"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun install --silent --cwd ${CLAUDE_PLUGIN_ROOT} && bun ${CLAUDE_PLUGIN_ROOT}/src/hooks/session-start.ts"
+          }
+        ]
+      }
+    ]
+  }
+}
