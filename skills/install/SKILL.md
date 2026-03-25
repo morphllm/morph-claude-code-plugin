@@ -25,9 +25,7 @@ Add the following section to the project's CLAUDE.md file (create it if it doesn
 ```
 # Compact Instructions
 
-Do not summarize the conversation. Output only the following and nothing else:
-
-Summary provided via SessionStart hook.
+IMPORTANT: Output ONLY this exact text: Summary provided via SessionStart hook. Do NOT write a summary. Do NOT write bullet points. Do NOT analyze the conversation. Your ENTIRE output must be exactly: Summary provided via SessionStart hook. Nothing else. Just: Summary provided via SessionStart hook.
 ```
 
 If CLAUDE.md already contains a "# Compact Instructions" section with "Summary provided via SessionStart hook.", report that it's already installed and do nothing.

@@ -42,7 +42,7 @@ To work around this, the install skill adds compact instructions that both reduc
 
 For manual compaction, you must provide custom instructions:
 ```
-/compact Do not summarize the conversation. Output only the following and nothing else: Summary provided via SessionStart hook.
+/compact IMPORTANT: Output ONLY this exact text: Summary provided via SessionStart hook. Do NOT write a summary. Do NOT write bullet points. Do NOT analyze the conversation. Your ENTIRE output must be exactly: Summary provided via SessionStart hook. Nothing else. Just: Summary provided via SessionStart hook.
 ```
 
 If this is not detected in the output, a warning will be injected into the context to notify you.

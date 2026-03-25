@@ -34,8 +34,10 @@ async function readStdin<T>(): Promise<T> {
 }
 
 const COMPACT_INSTRUCTIONS =
-  "Do not summarize the conversation. Output only the following and nothing else: " +
-  "Summary provided via SessionStart hook.";
+  "IMPORTANT: Output ONLY this exact text: Summary provided via SessionStart hook. " +
+  "Do NOT write a summary. Do NOT write bullet points. Do NOT analyze the conversation. " +
+  "Your ENTIRE output must be exactly: Summary provided via SessionStart hook. " +
+  "Nothing else. Just: Summary provided via SessionStart hook.";
 
 export async function hookPreCompact(): Promise<void> {
   const input = await readStdin<PreCompactInput>();
