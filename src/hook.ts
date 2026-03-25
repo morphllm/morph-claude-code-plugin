@@ -52,6 +52,13 @@ export async function hookPreCompact(): Promise<void> {
 
   await mkdir(STATE_DIR, { recursive: true });
 
+  const sf = stateFile(input.session_id);
+  const existing = Bun.file(sf);
+  if (await existing.exists()) {
+    const prev = (await existing.json()) as StateData;
+    if (prev.summary) return;
+  }
+
   try {
     const messages = await parseTranscript(input.transcript_path);
     const summary = await compact(messages);
@@ -61,21 +68,14 @@ export async function hookPreCompact(): Promise<void> {
       warn: input.trigger === "manual" && !input.custom_instructions,
     };
 
-    await Bun.write(stateFile(input.session_id), JSON.stringify(state));
+    await Bun.write(sf, JSON.stringify(state));
   } catch (e) {
-    const msg = (e as Error).message;
     const state: StateData = {
       summary: "",
       warn: false,
-      error: msg,
+      error: (e as Error).message,
     };
-    await Bun.write(stateFile(input.session_id), JSON.stringify(state));
-
-    process.stderr.write(
-      `Morph compaction failed: ${msg}\n` +
-        `Context from the previous conversation was NOT preserved.\n`,
-    );
-    process.exit(1);
+    await Bun.write(sf, JSON.stringify(state));
   }
 }
 
@@ -83,9 +83,24 @@ export async function hookSessionStart(): Promise<void> {
   const input = await readStdin<SessionStartInput>();
   if (!input.session_id) throw new Error("no session_id in hook input");
 
-  // additionalContext is ignored for compact; errors are surfaced
-  // directly from PreCompact via systemMessage instead
-  if (input.source === "compact") return;
+  if (input.source === "compact") {
+    const sf = stateFile(input.session_id);
+    const file = Bun.file(sf);
+    if (!(await file.exists())) return;
+
+    const state = (await file.json()) as StateData;
+    if (!state.summary) return;
+
+    const text = await Bun.file(input.transcript_path).text();
+    if (text.includes("Summary provided via SessionStart hook.")) {
+      await unlink(sf).catch(() => {});
+    } else {
+      process.stderr.write(
+        "Compact instructions were not followed. Run /compact again to apply the Morph summary.\n",
+      );
+    }
+    return;
+  }
 
   const sf = stateFile(input.session_id);
   const file = Bun.file(sf);
@@ -94,6 +109,19 @@ export async function hookSessionStart(): Promise<void> {
   const state = (await file.json()) as StateData;
 
   if (state.error) {
+    const data =
+      "ERROR: Morph compaction failed: " + state.error + "\n" +
+      "Inform the user about this error. Context from the previous conversation was NOT preserved.";
+
+    console.log(
+      JSON.stringify({
+        hookSpecificOutput: {
+          hookEventName: "SessionStart",
+          additionalContext: data,
+        },
+      }),
+    );
+
     await unlink(sf).catch(() => {});
     return;
   }
