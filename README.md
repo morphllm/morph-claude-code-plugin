@@ -16,19 +16,29 @@ The `morph-compact` plugin hooks parts of the compaction lifecycle in order to i
 
 The former uses the [PreCompact](https://code.claude.com/docs/en/hooks#precompact) hook and the latter uses the [SessionStart](https://code.claude.com/docs/en/hooks#sessionstart) hook.
 
-### Limitations
+### Installation
 
-Due to limitations with Claude Code's hooks, we are unable to alter the output of a compaction.
-
-To work around this, skill commands are bundled with the plugin that allows you to add compact instructions that both reduce time spent compacting and context pollution:
+Run the install skill to set up your API key and compact instructions:
 ```
 /morph-compact:install
 ```
 
-This injects a section in your CLAUDE.md that instructs Claude Code's automatic compaction to output a minimal summary. You may choose to remove this afterwards manually or with:
+This will:
+1. Prompt for your Morph API key and store it in `~/.claude/morph/.env`
+2. Add a compact instructions section to your project's CLAUDE.md
+
+To remove:
 ```
 /morph-compact:uninstall
 ```
+
+The API key can also be provided via the `MORPH_API_KEY` environment variable, which takes precedence over the file.
+
+### Limitations
+
+Due to limitations with Claude Code's hooks, we are unable to alter the output of a compaction.
+
+To work around this, the install skill adds compact instructions that both reduce time spent compacting and context pollution.
 
 For manual compaction, you must provide custom instructions:
 ```
