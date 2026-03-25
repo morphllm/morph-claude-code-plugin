@@ -21,6 +21,12 @@ interface StateData {
   summary: string;
   warn: boolean;
   error?: string;
+  stats?: {
+    messageCount: number;
+    inputChars: number;
+    outputChars: number;
+    durationMs: number;
+  };
 }
 
 const STATE_DIR = join(tmpdir(), "compact-hook");
@@ -35,12 +41,18 @@ async function readStdin<T>(): Promise<T> {
 
 const COMPACT_INSTRUCTIONS = "morph";
 
+function log(msg: string): void {
+  process.stderr.write(`[morph-compact] ${msg}\n`);
+}
+
 export async function hookPreCompact(): Promise<void> {
   const input = await readStdin<PreCompactInput>();
 
   if (!input.session_id) throw new Error("no session_id in hook input");
   if (!input.transcript_path)
     throw new Error("no transcript_path in hook input");
+
+  log(`PreCompact triggered: trigger=${input.trigger} session=${input.session_id}`);
 
   if (!(await Bun.file(input.transcript_path).exists())) {
     throw new Error(`transcript not found: ${input.transcript_path}`);
@@ -52,20 +64,33 @@ export async function hookPreCompact(): Promise<void> {
   const existing = Bun.file(sf);
   if (await existing.exists()) {
     const prev = (await existing.json()) as StateData;
-    if (prev.summary) return;
+    if (prev.summary) {
+      log("PreCompact: cached summary found, skipping API call");
+      return;
+    }
   }
 
   try {
     const messages = await parseTranscript(input.transcript_path);
+    const inputChars = messages.reduce((n, m) => n + m.content.length, 0);
+    log(`PreCompact: parsed ${messages.length} messages (${inputChars} chars), calling Morph API...`);
+
+    const start = performance.now();
     const summary = await compact(messages);
+    const durationMs = Math.round(performance.now() - start);
+    const ratio = inputChars > 0 ? ((summary.length / inputChars) * 100).toFixed(1) : "N/A";
+
+    log(`PreCompact: compaction complete in ${durationMs}ms — ${inputChars} → ${summary.length} chars (${ratio}% ratio)`);
 
     const state: StateData = {
       summary,
       warn: input.trigger === "manual" && !input.custom_instructions,
+      stats: { messageCount: messages.length, inputChars, outputChars: summary.length, durationMs },
     };
 
     await Bun.write(sf, JSON.stringify(state));
   } catch (e) {
+    log(`PreCompact: error — ${(e as Error).message}`);
     const state: StateData = {
       summary: "",
       warn: false,
@@ -75,50 +100,45 @@ export async function hookPreCompact(): Promise<void> {
   }
 }
 
+function emitContext(data: string): void {
+  console.log(
+    JSON.stringify({
+      hookSpecificOutput: {
+        hookEventName: "SessionStart",
+        additionalContext: data,
+      },
+    }),
+  );
+}
+
 export async function hookSessionStart(): Promise<void> {
   const input = await readStdin<SessionStartInput>();
   if (!input.session_id) throw new Error("no session_id in hook input");
 
-  if (input.source === "compact") {
-    const sf = stateFile(input.session_id);
-    const file = Bun.file(sf);
-    if (!(await file.exists())) return;
-
-    const state = (await file.json()) as StateData;
-    if (!state.summary) return;
-
-    const text = await Bun.file(input.transcript_path).text();
-    if (text.includes("Summary provided via SessionStart hook.")) {
-      await unlink(sf).catch(() => {});
-    } else {
-      process.stderr.write(
-        "Compact instructions were not followed. Run /compact again to apply the Morph summary.\n",
-      );
-    }
-    return;
-  }
+  log(`SessionStart: source=${input.source} session=${input.session_id}`);
 
   const sf = stateFile(input.session_id);
   const file = Bun.file(sf);
-  if (!(await file.exists())) return;
+  if (!(await file.exists())) {
+    log("SessionStart: no state file, nothing to inject");
+    return;
+  }
 
   const state = (await file.json()) as StateData;
+  log(`SessionStart: state=${JSON.stringify({ error: state.error, warn: state.warn, summaryLen: state.summary?.length ?? 0, stats: state.stats })}`);
 
   if (state.error) {
-    const data =
+    log(`SessionStart: injecting error — ${state.error}`);
+    emitContext(
       "ERROR: Morph compaction failed: " + state.error + "\n" +
-      "Inform the user about this error. Context from the previous conversation was NOT preserved.";
-
-    console.log(
-      JSON.stringify({
-        hookSpecificOutput: {
-          hookEventName: "SessionStart",
-          additionalContext: data,
-        },
-      }),
+      "Inform the user about this error. Context from the previous conversation was NOT preserved.",
     );
-
     await unlink(sf).catch(() => {});
+    return;
+  }
+
+  if (!state.summary) {
+    log("SessionStart: state file has no summary, skipping");
     return;
   }
 
@@ -132,14 +152,14 @@ export async function hookSessionStart(): Promise<void> {
       "Inform the user that for faster compaction they should run: `/compact morph`";
   }
 
-  console.log(
-    JSON.stringify({
-      hookSpecificOutput: {
-        hookEventName: "SessionStart",
-        additionalContext: data,
-      },
-    }),
-  );
+  if (state.stats) {
+    const { messageCount, inputChars, outputChars, durationMs } = state.stats;
+    const ratio = inputChars > 0 ? ((outputChars / inputChars) * 100).toFixed(1) : "N/A";
+    log(`SessionStart: injecting summary — ${messageCount} messages, ${inputChars} → ${outputChars} chars (${ratio}%), took ${durationMs}ms`);
+  } else {
+    log(`SessionStart: injecting summary (${data.length} chars)`);
+  }
 
+  emitContext(data);
   await unlink(sf).catch(() => {});
 }
