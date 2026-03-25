@@ -45,7 +45,7 @@ For manual compaction, you must provide custom instructions:
 /compact IMPORTANT: Output ONLY this exact text: Summary provided via SessionStart hook. Do NOT write a summary. Do NOT write bullet points. Do NOT analyze the conversation. Your ENTIRE output must be exactly: Summary provided via SessionStart hook. Nothing else. Just: Summary provided via SessionStart hook.
 ```
 
-If this is not detected in the output, a warning will be injected into the context to notify you.
+If the compact instructions are not followed (more likely on very large sessions), the plugin will detect this and prompt you to run `/compact` again. The second compaction operates on a much smaller context and is far more likely to succeed. The Morph summary is cached, so no additional API call is made on retry.
 
 > [!WARNING]
 > Even with these custom instructions, there's no guarantee that compaction will respect them.
