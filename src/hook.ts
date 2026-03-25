@@ -4,11 +4,17 @@ import { mkdir, unlink } from "fs/promises";
 import { parseTranscript } from "./transcript.ts";
 import { compact } from "./morph.ts";
 
-interface HookInput {
+interface PreCompactInput {
   session_id: string;
   transcript_path: string;
   trigger: string;
   custom_instructions: string;
+}
+
+interface SessionStartInput {
+  session_id: string;
+  transcript_path: string;
+  source: "startup" | "resume" | "compact";
 }
 
 interface StateData {
@@ -22,8 +28,8 @@ function stateFile(sessionID: string): string {
   return join(STATE_DIR, sessionID);
 }
 
-async function readHookInput(): Promise<HookInput> {
-  return JSON.parse(await Bun.stdin.text()) as HookInput;
+async function readStdin<T>(): Promise<T> {
+  return JSON.parse(await Bun.stdin.text()) as T;
 }
 
 const COMPACT_INSTRUCTIONS =
@@ -31,7 +37,7 @@ const COMPACT_INSTRUCTIONS =
   "Summary provided via SessionStart hook.";
 
 export async function hookPreCompact(): Promise<void> {
-  const input = await readHookInput();
+  const input = await readStdin<PreCompactInput>();
 
   if (!input.session_id) throw new Error("no session_id in hook input");
   if (!input.transcript_path)
@@ -54,8 +60,11 @@ export async function hookPreCompact(): Promise<void> {
 }
 
 export async function hookSessionStart(): Promise<void> {
-  const input = await readHookInput();
+  const input = await readStdin<SessionStartInput>();
   if (!input.session_id) throw new Error("no session_id in hook input");
+
+  // additionalContext is only injected for startup/resume, not compact
+  if (input.source === "compact") return;
 
   const sf = stateFile(input.session_id);
   const file = Bun.file(sf);
