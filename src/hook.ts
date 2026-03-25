@@ -33,11 +33,7 @@ async function readStdin<T>(): Promise<T> {
   return JSON.parse(await Bun.stdin.text()) as T;
 }
 
-const COMPACT_INSTRUCTIONS =
-  "IMPORTANT: Output ONLY this exact text: Summary provided via SessionStart hook. " +
-  "Do NOT write a summary. Do NOT write bullet points. Do NOT analyze the conversation. " +
-  "Your ENTIRE output must be exactly: Summary provided via SessionStart hook. " +
-  "Nothing else. Just: Summary provided via SessionStart hook.";
+const COMPACT_INSTRUCTIONS = "morph";
 
 export async function hookPreCompact(): Promise<void> {
   const input = await readStdin<PreCompactInput>();
@@ -131,10 +127,9 @@ export async function hookSessionStart(): Promise<void> {
   if (state.warn) {
     data +=
       "\n\n---\n" +
-      "WARNING: `/compact` was run without Morph compaction instructions, " +
+      "WARNING: `/compact` was run without the `morph` instruction, " +
       "so Claude performed its own slow summarization. " +
-      "Inform the user that for faster compaction they should run:\n" +
-      `/compact ${COMPACT_INSTRUCTIONS}`;
+      "Inform the user that for faster compaction they should run: `/compact morph`";
   }
 
   console.log(

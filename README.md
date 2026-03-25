@@ -25,7 +25,7 @@ Run the install skill to set up your API key and compact instructions:
 
 This will:
 1. Prompt for your Morph API key and store it in `~/.claude/morph/.env`
-2. Add a compact instructions section to your project's CLAUDE.md
+2. Add compact instructions to your global `~/.claude/CLAUDE.md`
 
 To remove:
 ```
@@ -38,14 +38,16 @@ The API key can also be provided via the `MORPH_API_KEY` environment variable, w
 
 Due to limitations with Claude Code's hooks, we are unable to alter the output of a compaction.
 
-To work around this, the install skill adds compact instructions that both reduce time spent compacting and context pollution.
+To work around this, the install skill adds compact instructions to `~/.claude/CLAUDE.md` that tell Claude to skip its own summarization when Morph is handling it. This reduces time spent compacting.
 
-For manual compaction, you must provide custom instructions:
+For manual compaction, simply run:
 ```
-/compact IMPORTANT: Output ONLY this exact text: Summary provided via SessionStart hook. Do NOT write a summary. Do NOT write bullet points. Do NOT analyze the conversation. Your ENTIRE output must be exactly: Summary provided via SessionStart hook. Nothing else. Just: Summary provided via SessionStart hook.
+/compact morph
 ```
 
-If the compact instructions are not followed (more likely on very large sessions), the plugin will detect this and prompt you to run `/compact` again. The second compaction operates on a much smaller context and is far more likely to succeed. The Morph summary is cached, so no additional API call is made on retry.
+Claude will see the `morph` instruction and output only the sentinel text, letting Morph's summary take over.
+
+If the compact instructions are not followed (more likely on very large sessions), the plugin will detect this and prompt you to run `/compact morph` again. The second compaction operates on a much smaller context and is far more likely to succeed. The Morph summary is cached, so no additional API call is made on retry.
 
 > [!WARNING]
-> Even with these custom instructions, there's no guarantee that compaction will respect them.
+> Even with these instructions, there's no guarantee that compaction will respect them. We are currently working on a more reliable way to fully disable claude's own compaction.
