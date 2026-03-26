@@ -13,12 +13,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Increment minor version
+      - name: Increment patch version
         run: |
           VERSION=$(node -e "console.log(require('./package.json').version)")
           MAJOR=$(echo $VERSION | cut -d. -f1)
           MINOR=$(echo $VERSION | cut -d. -f2)
-          NEW_VERSION="$MAJOR.$((MINOR + 1)).0"
+          PATCH=$(echo $VERSION | cut -d. -f3)
+          NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
 
           node -e "
             const fs = require('fs');
