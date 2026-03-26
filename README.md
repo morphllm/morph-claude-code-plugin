@@ -52,3 +52,4 @@ If the compact instructions are not followed (more likely on very large sessions
 > [!WARNING]
 > Even with these instructions, there's no guarantee that compaction will respect them. We are currently working on a more reliable way to fully disable claude's own compaction.
 # test
+# test 2
