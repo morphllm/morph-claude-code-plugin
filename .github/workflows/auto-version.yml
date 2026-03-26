@@ -1,0 +1,42 @@
+name: Auto-increment minor version
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Increment minor version
+        run: |
+          VERSION=$(node -e "console.log(require('./package.json').version)")
+          MAJOR=$(echo $VERSION | cut -d. -f1)
+          MINOR=$(echo $VERSION | cut -d. -f2)
+          NEW_VERSION="$MAJOR.$((MINOR + 1)).0"
+
+          node -e "
+            const fs = require('fs');
+            const pkg = require('./package.json');
+            pkg.version = '$NEW_VERSION';
+            fs.writeFileSync('./package.json', JSON.stringify(pkg, null, 2) + '\n');
+
+            const marketplace = require('./.claude-plugin/marketplace.json');
+            marketplace.plugins[0].version = '$NEW_VERSION';
+            fs.writeFileSync('./.claude-plugin/marketplace.json', JSON.stringify(marketplace, null, 2) + '\n');
+          "
+
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+      - name: Commit and push
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add package.json .claude-plugin/marketplace.json
+          git commit -m "chore: bump version to ${{ env.NEW_VERSION }}"
+          git push
