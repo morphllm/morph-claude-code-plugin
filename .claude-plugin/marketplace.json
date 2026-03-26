@@ -10,13 +10,17 @@
     {
       "name": "morph-compact",
       "description": "Intercepts Claude Code's context compaction and replaces it with Morph's compaction service",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "source": "./",
       "author": {
         "name": "Morph",
         "url": "https://morphllm.com"
       },
-      "keywords": ["compaction", "context", "morph"]
+      "keywords": [
+        "compaction",
+        "context",
+        "morph"
+      ]
     }
   ]
 }
