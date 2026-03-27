@@ -4,15 +4,19 @@ A [Claude Code](https://claude.com/product/claude-code) marketplace that houses 
 - **Compaction** — 25,000+ tok/s context compression in sub-2s, +0.6% on SWE-Bench Pro
 
 > [!IMPORTANT]
-> This repository contains only one of the four tools that are enabled in [opencode-morph-plugin](https://github.com/morphllm/opencode-morph-plugin). Consider using it if you want to take advantage of everything we have to offer.
+> This plugin enables morph's Flash Compact, but does NOT provide warpgrep OR fast apply. Those are available through the mcp. We strongly reccomend having BOTH the MCP and Plugin installed. 
 
 ## Compaction
 
 The `morph-compact` plugin hooks parts of the compaction lifecycle in order to inject [Morph Compact](https://www.morphllm.com/products/compact) into its context.
 
 ### How it works
-1. Before a compaction is run, the plugin calls out to the Morph Compact API with the current context.
-2. After compaction is complete, it injects the summarized context.
+1. Pre compact hook -> Use flash compact to compact context at 33,000 tps
+2. Post Compact hook -> inject this context into your claude code's context (status)
+3. Start session hook -> This fires on session state, resume or compact. Claude will read our compacted context out of its start session context
+
+> [!IMPORTANT]
+> Currently there is no way to make the default calude code compaction NOT run. So we prompt inject, asking claude's own summarization model to not waste time summarizing, instead only output a few words. Your claude will use morph's provided context instead. Prompt injection is not a fool proof method, we're working on making this more reliable and consisten. We are open to PRs for this. More detailes below
 
 The former uses the [PreCompact](https://code.claude.com/docs/en/hooks#precompact) hook and the latter uses the [SessionStart](https://code.claude.com/docs/en/hooks#sessionstart) hook.
 
@@ -51,5 +55,3 @@ If the compact instructions are not followed (more likely on very large sessions
 
 > [!WARNING]
 > Even with these instructions, there's no guarantee that compaction will respect them. We are currently working on a more reliable way to fully disable claude's own compaction.
-# test
-# test 2
