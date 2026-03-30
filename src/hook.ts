@@ -74,7 +74,9 @@ export async function hookPreCompact(): Promise<void> {
   if (!input.transcript_path)
     throw new Error("no transcript_path in hook input");
 
-  log(`PreCompact triggered: trigger=${input.trigger} session=${input.session_id}`);
+  log(
+    `PreCompact triggered: trigger=${input.trigger} session=${input.session_id}`,
+  );
 
   if (!(await Bun.file(input.transcript_path).exists())) {
     throw new Error(`transcript not found: ${input.transcript_path}`);
@@ -97,7 +99,9 @@ export async function hookPreCompact(): Promise<void> {
     const originalContent = await Bun.file(input.transcript_path).text();
     const messages = await parseTranscript(input.transcript_path);
     const inputChars = messages.reduce((n, m) => n + m.content.length, 0);
-    log(`PreCompact: parsed ${messages.length} messages (${inputChars} chars), calling Morph API...`);
+    log(
+      `PreCompact: parsed ${messages.length} messages (${inputChars} chars), calling Morph API...`,
+    );
 
     // Inject system override into transcript for Claude's compaction model
     await injectSystemOverride(input.transcript_path, originalContent);
@@ -106,14 +110,22 @@ export async function hookPreCompact(): Promise<void> {
     const start = performance.now();
     const summary = await compact(messages);
     const durationMs = Math.round(performance.now() - start);
-    const ratio = inputChars > 0 ? ((summary.length / inputChars) * 100).toFixed(1) : "N/A";
+    const ratio =
+      inputChars > 0 ? ((summary.length / inputChars) * 100).toFixed(1) : "N/A";
 
-    log(`PreCompact: compaction complete in ${durationMs}ms — ${inputChars} → ${summary.length} chars (${ratio}% ratio)`);
+    log(
+      `PreCompact: compaction complete in ${durationMs}ms — ${inputChars} → ${summary.length} chars (${ratio}% ratio)`,
+    );
 
     const state: StateData = {
       summary,
       warn: input.trigger === "manual" && !input.custom_instructions,
-      stats: { messageCount: messages.length, inputChars, outputChars: summary.length, durationMs },
+      stats: {
+        messageCount: messages.length,
+        inputChars,
+        outputChars: summary.length,
+        durationMs,
+      },
     };
 
     await Bun.write(sf, JSON.stringify(state));
@@ -126,17 +138,6 @@ export async function hookPreCompact(): Promise<void> {
     };
     await Bun.write(sf, JSON.stringify(state));
   }
-}
-
-function emitContext(data: string): void {
-  console.log(
-    JSON.stringify({
-      hookSpecificOutput: {
-        hookEventName: "SessionStart",
-        additionalContext: data,
-      },
-    }),
-  );
 }
 
 export async function hookSessionStart(): Promise<void> {
@@ -153,13 +154,17 @@ export async function hookSessionStart(): Promise<void> {
   }
 
   const state = (await file.json()) as StateData;
-  log(`SessionStart: state=${JSON.stringify({ error: state.error, warn: state.warn, summaryLen: state.summary?.length ?? 0, stats: state.stats })}`);
+  log(
+    `SessionStart: state=${JSON.stringify({ error: state.error, warn: state.warn, summaryLen: state.summary?.length ?? 0, stats: state.stats })}`,
+  );
 
   if (state.error) {
     log(`SessionStart: injecting error — ${state.error}`);
-    emitContext(
-      "ERROR: Morph compaction failed: " + state.error + "\n" +
-      "Inform the user about this error. Context from the previous conversation was NOT preserved.",
+    process.stdout.write(
+      "ERROR: Morph compaction failed: " +
+        state.error +
+        "\n" +
+        "Inform the user about this error. Context from the previous conversation was NOT preserved.",
     );
     await unlink(sf).catch(() => {});
     return;
@@ -182,12 +187,15 @@ export async function hookSessionStart(): Promise<void> {
 
   if (state.stats) {
     const { messageCount, inputChars, outputChars, durationMs } = state.stats;
-    const ratio = inputChars > 0 ? ((outputChars / inputChars) * 100).toFixed(1) : "N/A";
-    log(`SessionStart: injecting summary — ${messageCount} messages, ${inputChars} → ${outputChars} chars (${ratio}%), took ${durationMs}ms`);
+    const ratio =
+      inputChars > 0 ? ((outputChars / inputChars) * 100).toFixed(1) : "N/A";
+    log(
+      `SessionStart: injecting summary — ${messageCount} messages, ${inputChars} → ${outputChars} chars (${ratio}%), took ${durationMs}ms`,
+    );
   } else {
     log(`SessionStart: injecting summary (${data.length} chars)`);
   }
 
-  emitContext(data);
+  process.stdout.write(data);
   await unlink(sf).catch(() => {});
 }

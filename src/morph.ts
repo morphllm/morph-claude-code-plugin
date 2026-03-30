@@ -21,14 +21,14 @@ function loadApiKey(): string {
   try {
     const text = readFileSync(ENV_FILE, "utf-8");
     for (const line of text.split("\n")) {
-      const m = line.match(/^MORPH_API_KEY=(.+)$/);
-      if (m) return m[1].trim();
+      const key = line.match(/^MORPH_API_KEY=(.+)$/)?.[1];
+      if (key) return key.trim();
     }
   } catch {}
 
   throw new Error(
     "Morph API key not found. Run /morph-compact:install to configure it, " +
-    "or set MORPH_API_KEY environment variable.",
+      "or set MORPH_API_KEY environment variable.",
   );
 }
 
