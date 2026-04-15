@@ -3,11 +3,6 @@
   "version": "0.2.5",
   "type": "module",
   "private": true,
-  "scripts": {
-    "test:proxy": "bun test/proxy.ts",
-    "test:validate": "bun test/validate.ts",
-    "test:clean": "rm -rf test/captures"
-  },
   "devDependencies": {
     "@types/bun": "latest"
   },
