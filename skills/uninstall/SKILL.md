@@ -9,7 +9,7 @@ allowed-tools: [Read, Edit, Glob, Bash, AskUserQuestion]
 
 ## Step 1: CLAUDE.md
 
-Find and remove the "# Compact Instructions" section from the global `~/.claude/CLAUDE.md` file, but only if it contains the text "Summary provided via SessionStart hook." (confirming it was added by this plugin).
+Find and remove the "# Compact Instructions" section from the global `~/.claude/CLAUDE.md` file, but only if it contains the text "Summary of previous conversation in SessionStart hook" (confirming it was added by this plugin).
 
 Remove the heading, all content up to the next heading (or end of file), and any trailing blank lines left behind.
 
