@@ -2,7 +2,6 @@ import { join } from "path";
 import { homedir } from "os";
 import { readFileSync } from "fs";
 import { CompactClient } from "@morphllm/morphsdk";
-import type { TranscriptMessage } from "./transcript.ts";
 
 const COMPACT_TIMEOUT = 60000;
 const COMPACT_PRESERVE_RECENT = parseInt(
@@ -14,7 +13,7 @@ const COMPACT_RATIO = parseFloat(process.env.MORPH_COMPACT_RATIO || "0.3");
 export const MORPH_STATE_DIR = join(homedir(), ".claude", "morph");
 const ENV_FILE = join(MORPH_STATE_DIR, ".env");
 
-function loadApiKey(): string {
+function loadApiKey() {
   const envKey = process.env.MORPH_API_KEY;
   if (envKey) return envKey;
 
@@ -37,7 +36,7 @@ const client = new CompactClient({
   morphApiKey: loadApiKey(),
 });
 
-export async function compact(messages: TranscriptMessage[]): Promise<string> {
+export async function compact(messages) {
   if (messages.length === 0) return "Empty session - no prior context.";
 
   const lastUserMsg = messages.findLast((m) => m.role === "user");

@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npm install --silent --prefix ${CLAUDE_PLUGIN_ROOT} --omit=dev --no-audit --no-fund >/dev/null 2>&1 && node ${CLAUDE_PLUGIN_ROOT}/dist/hooks/pre-compact.js"
+            "command": "npm install --silent --prefix ${CLAUDE_PLUGIN_ROOT} --omit=dev --no-audit --no-fund >/dev/null 2>&1 && node ${CLAUDE_PLUGIN_ROOT}/hooks/pre-compact.js"
           }
         ]
       }
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "npm install --silent --prefix ${CLAUDE_PLUGIN_ROOT} --omit=dev --no-audit --no-fund >/dev/null 2>&1 && node ${CLAUDE_PLUGIN_ROOT}/dist/hooks/session-start.js"
+            "command": "npm install --silent --prefix ${CLAUDE_PLUGIN_ROOT} --omit=dev --no-audit --no-fund >/dev/null 2>&1 && node ${CLAUDE_PLUGIN_ROOT}/hooks/session-start.js"
           }
         ]
       }
@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ${CLAUDE_PLUGIN_ROOT}/dist/hooks/subagent-start.js"
+            "command": "node ${CLAUDE_PLUGIN_ROOT}/hooks/subagent-start.js"
           }
         ]
       }
@@ -35,7 +35,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ${CLAUDE_PLUGIN_ROOT}/dist/hooks/user-prompt-submit.js"
+            "command": "node ${CLAUDE_PLUGIN_ROOT}/hooks/user-prompt-submit.js"
           }
         ]
       }

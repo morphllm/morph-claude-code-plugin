@@ -1,30 +1,11 @@
 import { readFile } from "node:fs/promises";
 
-export interface TranscriptMessage {
-  role: string;
-  content: string;
-}
-
-interface TranscriptLine {
-  message?: {
-    role: string;
-    content: string | ContentBlock[];
-  };
-}
-
-interface ContentBlock {
-  type: string;
-  text?: string;
-  name?: string;
-  input?: unknown;
-}
-
-function extractText(content: string | ContentBlock[]): string {
+function extractText(content) {
   if (!content) return "";
   if (typeof content === "string") return content;
   if (!Array.isArray(content)) return "";
 
-  const parts: string[] = [];
+  const parts = [];
   for (const block of content) {
     switch (block.type) {
       case "text":
@@ -43,16 +24,14 @@ function extractText(content: string | ContentBlock[]): string {
   return parts.join("\n");
 }
 
-export async function parseTranscript(
-  path: string,
-): Promise<TranscriptMessage[]> {
+export async function parseTranscript(path) {
   const text = await readFile(path, "utf-8");
-  const messages: TranscriptMessage[] = [];
+  const messages = [];
 
   for (const line of text.split("\n")) {
     if (!line) continue;
 
-    let tl: TranscriptLine;
+    let tl;
     try {
       tl = JSON.parse(line);
     } catch {
