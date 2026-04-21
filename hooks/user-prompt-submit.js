@@ -1,6 +1,6 @@
-import type { UserPromptSubmitInput } from "./types.ts";
+import { text } from "node:stream/consumers";
 
-const input: UserPromptSubmitInput = JSON.parse(await Bun.stdin.text());
+const input = JSON.parse(await text(process.stdin));
 
 const prompt = input.prompt ?? "";
 const keywords = /\b(where|explain|find)\b/i;

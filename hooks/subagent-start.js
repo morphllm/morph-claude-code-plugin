@@ -1,10 +1,10 @@
-import type { SubagentStartInput } from "./types.ts";
+import { text } from "node:stream/consumers";
 
-const input: SubagentStartInput = JSON.parse(await Bun.stdin.text());
+const input = JSON.parse(await text(process.stdin));
 
 const agentType = (input.agent_type ?? "").toLowerCase();
 
-let additionalContext: string | undefined;
+let additionalContext;
 
 if (agentType === "plan") {
   additionalContext = `Before you begin planning. Think deeply about what questions you need answered from this codebase. Think of 2-4 different angles of questioning. What code relationships do you want to explore? What do you want to look for? Then fire consecutive codebase_search tool calls.`;
