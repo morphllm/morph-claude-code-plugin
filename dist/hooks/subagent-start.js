@@ -1,32 +1,36 @@
-import type { SubagentStartInput } from "./types.ts";
-import { readStdinText } from "../stdin.ts";
+import { createRequire } from 'module'; const require = createRequire(import.meta.url);
 
-const input: SubagentStartInput = JSON.parse(await readStdinText());
+// src/stdin.ts
+import { text } from "node:stream/consumers";
+async function readStdinText() {
+  return await text(process.stdin);
+}
 
-const agentType = (input.agent_type ?? "").toLowerCase();
-
-let additionalContext: string | undefined;
-
+// src/hooks/subagent-start.ts
+var input = JSON.parse(await readStdinText());
+var agentType = (input.agent_type ?? "").toLowerCase();
+var additionalContext;
 if (agentType === "plan") {
   additionalContext = `Before you begin planning. Think deeply about what questions you need answered from this codebase. Think of 2-4 different angles of questioning. What code relationships do you want to explore? What do you want to look for? Then fire consecutive codebase_search tool calls.`;
 } else if (agentType === "explore") {
   additionalContext = `Always start searching with using the codebase_search tool. Think deeply about what questions you need answered from this codebase. Think of 2-4 different angles of questioning. What code relationships do you want to explore? What do you want to look for? Then fire consecutive codebase_search tool calls.`;
 }
-
 if (additionalContext) {
   console.log(
     JSON.stringify({
       hookSpecificOutput: {
         hookEventName: "SubagentStart",
-        additionalContext,
-      },
-    }),
+        additionalContext
+      }
+    })
   );
   process.stderr.write(
-    `[morph-hooks] SubagentStart: injected codebase_search nudge for agent_type=${agentType}\n`,
+    `[morph-hooks] SubagentStart: injected codebase_search nudge for agent_type=${agentType}
+`
   );
 } else {
   process.stderr.write(
-    `[morph-hooks] SubagentStart: no injection for agent_type=${agentType}\n`,
+    `[morph-hooks] SubagentStart: no injection for agent_type=${agentType}
+`
   );
 }

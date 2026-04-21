@@ -22,7 +22,7 @@ function loadApiKey(): string {
     const text = readFileSync(ENV_FILE, "utf-8");
     for (const line of text.split("\n")) {
       const m = line.match(/^MORPH_API_KEY=(.+)$/);
-      if (m) return m[1].trim();
+      if (m && m[1]) return m[1].trim();
     }
   } catch {}
 

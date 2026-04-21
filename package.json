@@ -3,8 +3,14 @@
   "version": "0.2.7",
   "type": "module",
   "private": true,
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit"
+  },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.0"
   },
   "dependencies": {
     "@morphllm/morphsdk": "^0.2.157"

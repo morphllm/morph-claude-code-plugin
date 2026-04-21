@@ -1,8 +1,9 @@
-import { join } from "path";
-import { tmpdir } from "os";
-import { mkdir, unlink } from "fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { mkdir, unlink, readFile, writeFile, access } from "node:fs/promises";
 import { parseTranscript } from "./transcript.ts";
 import { compact } from "./morph.ts";
+import { readStdinText } from "./stdin.ts";
 
 interface PreCompactInput {
   session_id: string;
@@ -36,7 +37,16 @@ function stateFile(sessionID: string): string {
 }
 
 async function readStdin<T>(): Promise<T> {
-  return JSON.parse(await Bun.stdin.text()) as T;
+  return JSON.parse(await readStdinText()) as T;
+}
+
+async function fileExists(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function log(msg: string): void {
@@ -52,16 +62,15 @@ export async function hookPreCompact(): Promise<void> {
 
   log(`PreCompact triggered: trigger=${input.trigger} session=${input.session_id}`);
 
-  if (!(await Bun.file(input.transcript_path).exists())) {
+  if (!(await fileExists(input.transcript_path))) {
     throw new Error(`transcript not found: ${input.transcript_path}`);
   }
 
   await mkdir(STATE_DIR, { recursive: true });
 
   const sf = stateFile(input.session_id);
-  const existing = Bun.file(sf);
-  if (await existing.exists()) {
-    const prev = (await existing.json()) as StateData;
+  if (await fileExists(sf)) {
+    const prev = JSON.parse(await readFile(sf, "utf-8")) as StateData;
     if (prev.summary) {
       log("PreCompact: cached summary found, skipping API call");
       return;
@@ -86,7 +95,7 @@ export async function hookPreCompact(): Promise<void> {
       stats: { messageCount: messages.length, inputChars, outputChars: summary.length, durationMs },
     };
 
-    await Bun.write(sf, JSON.stringify(state));
+    await writeFile(sf, JSON.stringify(state));
   } catch (e) {
     log(`PreCompact: error — ${(e as Error).message}`);
     const state: StateData = {
@@ -94,7 +103,7 @@ export async function hookPreCompact(): Promise<void> {
       warn: false,
       error: (e as Error).message,
     };
-    await Bun.write(sf, JSON.stringify(state));
+    await writeFile(sf, JSON.stringify(state));
   }
 }
 
@@ -116,13 +125,12 @@ export async function hookSessionStart(): Promise<void> {
   log(`SessionStart: source=${input.source} session=${input.session_id}`);
 
   const sf = stateFile(input.session_id);
-  const file = Bun.file(sf);
-  if (!(await file.exists())) {
+  if (!(await fileExists(sf))) {
     log("SessionStart: no state file, nothing to inject");
     return;
   }
 
-  const state = (await file.json()) as StateData;
+  const state = JSON.parse(await readFile(sf, "utf-8")) as StateData;
   log(`SessionStart: state=${JSON.stringify({ error: state.error, summaryLen: state.summary?.length ?? 0, stats: state.stats })}`);
 
   if (state.error) {

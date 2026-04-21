@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+
 export interface TranscriptMessage {
   role: string;
   content: string;
@@ -44,7 +46,7 @@ function extractText(content: string | ContentBlock[]): string {
 export async function parseTranscript(
   path: string,
 ): Promise<TranscriptMessage[]> {
-  const text = await Bun.file(path).text();
+  const text = await readFile(path, "utf-8");
   const messages: TranscriptMessage[] = [];
 
   for (const line of text.split("\n")) {
